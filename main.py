@@ -1,96 +1,104 @@
 """
 Student Fee Management System
 PS No. 64 | Python 3
-A console-based application using dictionaries, functions, conditions and file handling.
+
+Concepts: Dictionaries, Functions, Conditions and File Handling.
 """
 
+import csv
 import os
 
 DATA_FILE = "fees.txt"
 
-# Course name : Total course fee
+# Course fees (course name: total fee)
 COURSE_FEES = {
     "BCA": 45000,
     "BTech": 80000,
     "MBA": 80000
 }
 
-# Each student is stored as a dictionary inside this list.
+# Each student is stored as a dictionary in this list.
 students = []
 
 
 def calculate_due(student):
-    """Return the remaining fee for a student."""
+    """Return the remaining fee."""
     return student["TotalFee"] - student["Paid"]
 
 
 def get_status(student):
-    """Return Unpaid, Partial or Paid according to the payment balance."""
-    due = calculate_due(student)
-
+    """Return Unpaid, Partial or Paid."""
     if student["Paid"] == 0:
         return "Unpaid"
-    elif due == 0:
+    if calculate_due(student) == 0:
         return "Paid"
     return "Partial"
 
 
+def search_student(roll):
+    """Find a student by roll number; return None if not found."""
+    for student in students:
+        if student["Roll"] == roll:
+            return student
+    return None
+
+
 def save_records():
-    """Save all student records to fees.txt."""
+    """Save records in fees.txt as Roll,Name,Course,Paid."""
     try:
-        with open(DATA_FILE, "w", encoding="utf-8") as file:
+        with open(DATA_FILE, "w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
             for student in students:
-                # Comma-separated format follows the college specification.
-                line = (
-                    f'{student["Roll"]},{student["Name"]},'
-                    f'{student["Course"]},{student["Paid"]}\n'
-                )
-                file.write(line)
+                writer.writerow([
+                    student["Roll"],
+                    student["Name"],
+                    student["Course"],
+                    student["Paid"]
+                ])
+        return True
     except OSError as error:
-        print(f"Error: Could not save records. {error}")
+        print(f"Error: Could not save records: {error}")
+        return False
 
 
 def load_records():
-    """Load student records from fees.txt when the program starts."""
+    """Load valid student records from fees.txt at startup."""
     students.clear()
 
     if not os.path.exists(DATA_FILE):
         return
 
     try:
-        with open(DATA_FILE, "r", encoding="utf-8") as file:
-            for line_number, line in enumerate(file, start=1):
-                line = line.strip()
-                if not line:
+        with open(DATA_FILE, "r", newline="", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            for line_number, row in enumerate(reader, start=1):
+                if not row:
                     continue
 
-                parts = line.split(",")
-                if len(parts) != 4:
+                if len(row) != 4:
                     print(f"Warning: Invalid record on line {line_number}; skipped.")
                     continue
 
-                roll, name, course, paid_text = parts
+                roll_text, name, course, paid_text = row
+                name = name.strip()
+                course = course.strip()
 
                 try:
-                    roll = int(roll)
+                    roll = int(roll_text)
                     paid = int(paid_text)
                 except ValueError:
                     print(f"Warning: Invalid number on line {line_number}; skipped.")
                     continue
 
-                course = course.strip()
-                name = name.strip()
-
-                if not name or course not in COURSE_FEES:
+                if roll <= 0 or not name or course not in COURSE_FEES:
                     print(f"Warning: Invalid student data on line {line_number}; skipped.")
                     continue
 
                 total_fee = COURSE_FEES[course]
-                if roll <= 0 or paid < 0 or paid > total_fee:
-                    print(f"Warning: Invalid fee data on line {line_number}; skipped.")
+                if paid < 0 or paid > total_fee:
+                    print(f"Warning: Invalid payment on line {line_number}; skipped.")
                     continue
 
-                # Ignore duplicate roll numbers rather than loading duplicate students.
                 if search_student(roll) is not None:
                     print(f"Warning: Duplicate roll number {roll}; later record skipped.")
                     continue
@@ -103,31 +111,21 @@ def load_records():
                     "Paid": paid
                 })
     except OSError as error:
-        print(f"Error: Could not read records. {error}")
-
-
-def search_student(roll):
-    """Find and return a student dictionary by roll number."""
-    for student in students:
-        if student["Roll"] == roll:
-            return student
-    return None
+        print(f"Error: Could not read records: {error}")
 
 
 def add_student():
-    """Register a student in a course."""
+    """Register a student with an unpaid course fee."""
     print("\n--- Add Student ---")
-
     try:
         roll = int(input("Roll: ").strip())
     except ValueError:
-        print("Invalid roll number. Please enter a whole number.")
+        print("Invalid roll number. Enter a whole number.")
         return
 
     if roll <= 0:
         print("Roll number must be greater than zero.")
         return
-
     if search_student(roll) is not None:
         print(f"Student with roll number {roll} already exists.")
         return
@@ -139,11 +137,11 @@ def add_student():
 
     print("Available courses:")
     for course, fee in COURSE_FEES.items():
-        print(f"{course}: ₹{fee}")
+        print(f"{course}: {fee}")
 
     course = input("Course: ").strip()
     if course not in COURSE_FEES:
-        print("Invalid course. Please select BCA, BTech or MBA.")
+        print("Invalid course. Choose BCA, BTech or MBA.")
         return
 
     student = {
@@ -153,9 +151,12 @@ def add_student():
         "TotalFee": COURSE_FEES[course],
         "Paid": 0
     }
-
     students.append(student)
-    save_records()
+
+    if not save_records():
+        students.remove(student)
+        print("Student was not added because the record could not be saved.")
+        return
 
     print(
         f"Student added: {roll} | {name} | {course} | "
@@ -165,13 +166,12 @@ def add_student():
 
 
 def pay_fee():
-    """Accept a valid fee payment for an existing student."""
+    """Accept a payment only when it is positive and does not exceed the due."""
     print("\n--- Pay Fee ---")
-
     try:
         roll = int(input("Roll: ").strip())
     except ValueError:
-        print("Invalid roll number. Please enter a whole number.")
+        print("Invalid roll number. Enter a whole number.")
         return
 
     student = search_student(roll)
@@ -187,19 +187,23 @@ def pay_fee():
     try:
         amount = int(input("Amount: ").strip())
     except ValueError:
-        print("Invalid amount. Please enter a whole number.")
+        print("Invalid amount. Enter a whole number.")
         return
 
     if amount <= 0:
         print("Payment rejected. Amount must be greater than zero.")
         return
-
     if amount > due:
         print(f"Amount exceeds due ({due}). Payment rejected.")
         return
 
+    old_paid = student["Paid"]
     student["Paid"] += amount
-    save_records()
+
+    if not save_records():
+        student["Paid"] = old_paid
+        print("Payment was not recorded because the file could not be saved.")
+        return
 
     print(
         f"Payment received. Paid: {student['Paid']} | "
@@ -208,13 +212,12 @@ def pay_fee():
 
 
 def search_by_roll():
-    """Display one student's fee record using the roll number."""
+    """Display a student's complete fee record."""
     print("\n--- Search Student ---")
-
     try:
         roll = int(input("Roll: ").strip())
     except ValueError:
-        print("Invalid roll number. Please enter a whole number.")
+        print("Invalid roll number. Enter a whole number.")
         return
 
     student = search_student(roll)
@@ -231,9 +234,8 @@ def search_by_roll():
 
 
 def pending_dues():
-    """List all students whose fee balance is greater than zero."""
+    """Display all students who still have fees to pay."""
     print("\n--- Pending Dues ---")
-
     pending_students = [
         student for student in students if calculate_due(student) > 0
     ]
@@ -244,7 +246,6 @@ def pending_dues():
 
     print("Roll | Name | Course | Total Fee | Paid | Due | Status")
     print("-" * 72)
-
     for student in pending_students:
         print(
             f"{student['Roll']} | {student['Name']} | {student['Course']} | "
@@ -254,7 +255,7 @@ def pending_dues():
 
 
 def display_menu():
-    """Display the main menu."""
+    """Display the application menu."""
     print("\n========== STUDENT FEE MANAGEMENT SYSTEM ==========")
     print("1. Add Student")
     print("2. Pay Fee")
@@ -265,7 +266,7 @@ def display_menu():
 
 
 def main():
-    """Load saved data and run the console menu."""
+    """Load records and run the menu until the user exits."""
     load_records()
     print("Student Fee Management System")
     print(f"Records loaded: {len(students)}")
@@ -283,8 +284,9 @@ def main():
         elif choice == "4":
             pending_dues()
         elif choice == "5":
-            save_records()
-            print("Thank you. Records saved. Exiting...")
+            if save_records():
+                print("Records saved. Thank you for using the system.")
+            print("Exiting...")
             break
         else:
             print("Invalid choice. Please enter a number from 1 to 5.")
