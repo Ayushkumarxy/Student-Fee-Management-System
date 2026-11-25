@@ -40,7 +40,7 @@ def save_records():
     try:
         with open(DATA_FILE, "w", encoding="utf-8") as file:
             for student in students:
-                # Pipe-separated format keeps ordinary spaces/commas in names safe.
+                # Comma-separated format follows the college specification.
                 line = (
                     f'{student["Roll"]}|{student["Name"]}|'
                     f'{student["Course"]}|{student["Paid"]}\n'
@@ -64,7 +64,7 @@ def load_records():
                 if not line:
                     continue
 
-                parts = line.split("|")
+                parts = line.split(",")
                 if len(parts) != 4:
                     print(f"Warning: Invalid record on line {line_number}; skipped.")
                     continue
