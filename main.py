@@ -42,8 +42,8 @@ def save_records():
             for student in students:
                 # Comma-separated format follows the college specification.
                 line = (
-                    f'{student["Roll"]}|{student["Name"]}|'
-                    f'{student["Course"]}|{student["Paid"]}\n'
+                    f'{student["Roll"]},{student["Name"]},'
+                    f'{student["Course"]},{student["Paid"]}\n'
                 )
                 file.write(line)
     except OSError as error:
