@@ -4,7 +4,7 @@
 **Language:** Python 3  
 **Concepts:** Dictionaries, Functions, Conditions and File Handling
 
-A beginner-friendly console application to register students, collect course fees, search student records and display pending dues. All records are stored locally in `fees.txt`.
+A menu-driven console application to register students, collect course fees, search student records and display pending dues. Records are stored locally in `fees.txt`.
 
 ## Course fee structure
 
@@ -21,9 +21,10 @@ A beginner-friendly console application to register students, collect course fee
 - Reject zero, negative and over-due payments.
 - Search student details by roll number.
 - List all students with pending dues.
-- Calculate due amount and payment status automatically.
-- Load records when the program starts and save after every change.
-- Prevent duplicate roll numbers.
+- Calculate due amount and status automatically: Unpaid, Partial or Paid.
+- Load records at startup and save after every successful change.
+- Prevent duplicate roll numbers and skip malformed records.
+- Use CSV handling so names containing commas are safely stored.
 
 ## Requirements
 
@@ -32,19 +33,19 @@ A beginner-friendly console application to register students, collect course fee
 
 ## Run
 
-Open a terminal in this project folder and execute:
+Open a terminal in this project folder:
 
 ```bash
 python main.py
 ```
 
-On Windows, this may also be:
+On Windows, you can also use:
 
 ```bash
 py main.py
 ```
 
-The application creates `fees.txt` automatically when the first student is added. Keep this file in the same folder as `main.py`; it contains the saved student records.
+The application creates `fees.txt` automatically when the first student is added. Keep it in the same folder as `main.py` to retain saved records.
 
 ## Menu
 
@@ -54,34 +55,42 @@ The application creates `fees.txt` automatically when the first student is added
 4. Pending Dues
 5. Exit
 
-## File format
+## Data file format
 
-Each line in `fees.txt` stores one record in the comma-separated format:
+Each record in `fees.txt` contains:
 
 ```text
 Roll,Name,Course,Paid
 ```
 
-The total fee is taken from the course-fee dictionary, so it does not need to be duplicated in the file.
+The total fee is calculated from the course-fee dictionary and is not duplicated in the file.
 
 ## Validation
 
-- Roll number must be a positive whole number and must be unique.
+- Roll number must be a positive whole number and unique.
 - Student name cannot be empty.
 - Course must be BCA, BTech or MBA.
 - Payment must be a positive whole number.
-- Payment cannot exceed the student's current due amount.
+- Payment cannot exceed the student's current due.
+- Failed file writes do not leave an unsaved student/payment in memory.
 
-## Test scenarios from the college specification
+## College test cases
 
 | Test | Input / action | Expected result |
 |---|---|---|
 | 1. Normal input | Add roll 101, Riya, BCA | Total ₹45,000; Paid ₹0; Due ₹45,000; Unpaid |
 | 2. Boundary input | Pay ₹45,000 for roll 101 | Paid ₹45,000; Due ₹0; Paid |
-| 3. Invalid input | Try paying ₹50,000 when due is ₹45,000 | Payment rejected; record unchanged |
-| 4. Different valid scenario | Add roll 102, Aman, BTech; pay ₹20,000 | Paid ₹20,000; Due ₹60,000; Partial; roll 102 appears in Pending Dues |
+| 3. Invalid input | Pay ₹50,000 when due is ₹45,000 | Rejected; saved record unchanged |
+| 4. Different valid scenario | Add roll 102, Aman, BTech; pay ₹20,000 | Paid ₹20,000; Due ₹60,000; Partial; appears in Pending Dues |
 
-## Notes
+## Verification
 
-- This is a console-based academic project, not a real payment gateway.
-- `fees.txt` is generated at runtime and should not be deleted if saved records are needed.
+The four college scenarios were executed using Python 3.13.5 in isolated temporary directories. The test run also checked that records persist after restarting the program. All five checks passed.
+
+## Project report
+
+See [PROJECT_REPORT.md](PROJECT_REPORT.md) for the project write-up, function descriptions, test-case results and limitations.
+
+## Scope and limitation
+
+This is an academic console application. It does not connect to a real payment gateway, database server or institution ERP.
