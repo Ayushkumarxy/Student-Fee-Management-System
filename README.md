@@ -56,10 +56,10 @@ The application creates `fees.txt` automatically when the first student is added
 
 ## File format
 
-Each line in `fees.txt` stores one record in this format:
+Each line in `fees.txt` stores one record in the comma-separated format:
 
 ```text
-Roll|Name|Course|Paid
+Roll,Name,Course,Paid
 ```
 
 The total fee is taken from the course-fee dictionary, so it does not need to be duplicated in the file.
